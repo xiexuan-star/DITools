@@ -1,9 +1,22 @@
 import { Injectable } from './DI';
 
-@Injectable()
 export class Transportation {
   drive() {
     return 'transportation';
+  }
+}
+
+@Injectable()
+export class Bicycle extends Transportation {
+  drive() {
+    return 'bicycle';
+  }
+}
+
+@Injectable()
+export class Car extends Transportation {
+  drive() {
+    return 'car';
   }
 }
 
