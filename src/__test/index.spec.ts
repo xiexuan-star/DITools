@@ -1,12 +1,24 @@
 import { Container } from '../DI';
-import { Bicycle, Car, Student, Transportation } from '../index';
+import {
+  Bicycle, Car, ITransportation, Student, StudentWithParamsInject, StudentWithPropertyInject, Transportation
+} from '../index';
 
 test('basic usage of DI', () => {
   const container = new Container();
 
   let week = 5;
   container.register({
-    token: Transportation, useFactory: (c: ContainerInterface) => {
+    token: Transportation,
+    useFactory: (c: ContainerInterface) => {
+      if (week <= 5) {
+        return c.resolve(Bicycle);
+      } else {
+        return c.resolve(Car);
+      }
+    }
+  }, {
+    token: ITransportation,
+    useFactory: (c: ContainerInterface) => {
       if (week <= 5) {
         return c.resolve(Bicycle);
       } else {
@@ -18,10 +30,17 @@ test('basic usage of DI', () => {
   const student = container.resolve(Student);
   expect(student.gotoSchool()).toBe('go to school by bicycle');
 
+  const student2 = container.resolve(StudentWithParamsInject);
+  expect(student2.gotoSchool()).toBe('go to school by bicycle');
+
+  const student3 = container.resolve(StudentWithPropertyInject);
+  expect(student3.gotoSchool()).toBe('go to school by bicycle');
+
   week = 6;
 
-  const student2 = container.resolve(Student);
-  expect(student2.gotoSchool()).toBe('go to school by car');
-})
-;
+  const student4 = container.resolve(Student);
+  expect(student4.gotoSchool()).toBe('go to school by car');
 
+  const student5 = container.resolve(StudentWithParamsInject);
+  expect(student5.gotoSchool()).toBe('go to school by car');
+});

@@ -1,9 +1,7 @@
-import { Injectable } from './DI';
+import { Inject, Injectable } from './DI';
 
-export class Transportation {
-  drive() {
-    return 'transportation';
-  }
+export abstract class Transportation {
+  abstract drive(): string
 }
 
 @Injectable()
@@ -20,11 +18,35 @@ export class Car extends Transportation {
   }
 }
 
+export const ITransportation = Symbol('ITransportation');
+
+export interface ITransportation {
+  drive(): string;
+}
+
 @Injectable()
 export class Student {
-  constructor(private transportation: Transportation) {}
+  constructor(protected transportation: Transportation) {}
 
   gotoSchool() {
     return `go to school by ${ this.transportation.drive() }`;
+  }
+}
+
+@Injectable()
+export class StudentWithParamsInject extends Student {
+  constructor(@Inject(ITransportation) transportation: ITransportation) {
+    super(transportation);
+  }
+}
+
+@Injectable()
+export class StudentWithPropertyInject {
+  @Inject(ITransportation)
+  //@ts-ignore
+  private transportation: ITransportation;
+
+  gotoSchool() {
+    return `go to school by ${ this.transportation!.drive() }`;
   }
 }

@@ -4,7 +4,7 @@ declare type ConstructorOf<T> = new (...args: any[]) => T
 declare type InjectableOpts = { deps: ConstructorOf<any>[] }
 
 declare interface ContainerInterface {
-  resolve<T>(target: ConstructorOf<T>): T;
+  resolve<T>(target: Token<T>): T;
 
   register(...args: Provider[]): void;
 }
