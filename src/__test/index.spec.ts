@@ -1,6 +1,7 @@
 import { Container } from '../DI';
 import {
-  Bicycle, Car, ITransportation, Student, StudentWithParamsInject, StudentWithPropertyInject, Transportation
+  Bicycle, Car, Father, ITransportation, Son, Student, StudentWithParamsInject, StudentWithPropertyInject,
+  Transportation
 } from '../index';
 
 test('basic usage of DI', () => {
@@ -43,4 +44,9 @@ test('basic usage of DI', () => {
 
   const student5 = container.resolve(StudentWithParamsInject);
   expect(student5.gotoSchool()).toBe('go to school by car');
+
+  const container2 = new Container();
+  container2.register(Father, Son);
+  const father = container2.resolve(Father);
+  expect(father.getDescription()).toBe('I am Durotan, my son is Thrall.');
 });

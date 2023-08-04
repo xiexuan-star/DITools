@@ -17,6 +17,7 @@ export class Container implements ContainerInterface {
   private providerMap = new Map<Token, Provider>();
 
   resolve<T>(token: Token<T>): T {
+    token = this.resolveToken(token);
     const provider = this.providerMap.get(token);
     if (provider) {
       if (ProviderAssertion.isClassProvider(provider)) {
@@ -30,6 +31,10 @@ export class Container implements ContainerInterface {
     return this.resolveClassProvider({ token, useClass: token as ConstructorOf<T> });
   }
 
+  private resolveToken(token: any) {
+    return typeof token === 'object' ? token.forwardRef ? token.forwardRef() : token : token;
+  }
+
   private resolveClassProvider<T>(provider: ClassProvider<T>): T {
     const injectableOpts = Reflect.getOwnMetadata(DECORATOR_KEY.Injectable, provider.useClass) as InjectableOpts;
     if (!injectableOpts) throw new Error(ERROR_MSG.NO_INJECTABLE);
@@ -37,15 +42,7 @@ export class Container implements ContainerInterface {
     const result = new provider.useClass(...args);
     result[REFLECT_KEY.Container] = this;
 
-    const properties = this.resolveProperties(provider.useClass);
-    properties.forEach(({ key, token }) => {
-      let instance: any;
-      Reflect.defineProperty(result as object, key, {
-        get() {
-          return instance || (instance = this[REFLECT_KEY.Container].resolve(token));
-        }
-      });
-    });
+    this.applyProperties(result as object, provider.useClass);
     return result;
   }
 
@@ -57,11 +54,18 @@ export class Container implements ContainerInterface {
     return provider.useFactory(this);
   }
 
-  private resolveProperties(target: ConstructorOf<any>) {
+  private applyProperties(instance: object, target: ConstructorOf<any>) {
     const tokenMap = Reflect.getMetadata(DECORATOR_KEY.InjectProperty, target);
-    if (!tokenMap) return [];
-    return [...tokenMap.entries()].map(([key, token]) => {
+    const properties = tokenMap ? [...tokenMap.entries()].map(([key, token]) => {
       return { key, token };
+    }) : [];
+    properties.forEach(({ key, token }) => {
+      let depInstance: any;
+      Reflect.defineProperty(instance as object, key, {
+        get() {
+          return depInstance || (depInstance = this[REFLECT_KEY.Container].resolve(token));
+        }
+      });
     });
   }
 
@@ -72,7 +76,6 @@ export class Container implements ContainerInterface {
   }
 }
 
-// 标记依赖
 export function Injectable<T>() {
   return function (target: ConstructorOf<T>) {
     const deps = Reflect.getMetadata(DESIGN_TYPE_NAME.ParamType, target) || [];
@@ -87,6 +90,12 @@ export function Injectable<T>() {
     const injectableOpts = { deps };
     Reflect.defineMetadata(DECORATOR_KEY.Injectable, injectableOpts, target);
   };
+}
+
+export function forwardRef<T>(fn: () => T) {
+  return {
+    forwardRef: fn
+  } as unknown as Token;
 }
 
 // 标记参数依赖
